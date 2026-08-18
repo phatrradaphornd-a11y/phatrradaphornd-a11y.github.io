@@ -11,7 +11,7 @@ locale                   : "en-US"
 site_theme               : "default" # The available themes options are "default", "air", "sunrise", "mint", "dirt" and "contrast"
 title                    : "Phatrradaphorn Depo"
 title_separator          : "-"
-name                     : &name "Your Name"
+name                     : &name "Phatrradaphorn Depo"
 description              : &description "Your Name's academic portfolio"   # Update this with a general description of your site, this is the default if not overridden by a page
 url                      : https://academicpages.github.io # The base hostname & protocol for your site e.g. "https://[your GitHub username].github.io",
                                                            # or if you already have some other page hosted on Github then use "https://[your GitHub username].github.io/[Your Repo Name]"
@@ -28,9 +28,9 @@ author:
   pronouns         : # example: "she/her"  
   bio              : "Short biography for the left-hand sidebar"
   location         : "Earth"
-  employer         : "Red Brick University"
+  employer         : "Mahidol University"
   uri              : # URL
-  email            : "none@example.org" 
+  email            : "Phatrradaphorn.d@gmail.com" 
 
   # Academic websites
   academia         : # URL
@@ -58,13 +58,13 @@ author:
   # Social media
   artstation       : # Username
   bluesky          : "bsky.app" # Replace this with you Bluesky username
-  facebook         : # Username
+  facebook         : "Phatrradaphorn Depo"
   flickr           : # Username
   foursquare       : # Username
   goodreads        : # Username
   google_plus      : # Username
   keybase          : # Username
-  instagram        : # Username
+  instagram        : "snxck_21"
   lastfm           : # Username
   linkedin         : # Username
   mastodon         : # URL
