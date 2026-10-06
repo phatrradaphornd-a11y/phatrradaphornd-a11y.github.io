@@ -23,8 +23,8 @@ repository               : "academicpages/academicpages.github.io"
 #               Additional customization can be done by editing /_includes/author-profile.html
 author:
   # Biographic information
-  avatar           : "images/phatrradaphhorn.jpg"
-  name             : "images/phatrradaphhorn.jpg"
+  avatar           : "_"
+  name             : "Phatrradaphorn Depo"
   pronouns         : # example: "she/her"  
   bio              : "I am a fourth-year Geoscience student who is always eager to learn, explore new things, and gain new experiences."
   location         : "Earths"
