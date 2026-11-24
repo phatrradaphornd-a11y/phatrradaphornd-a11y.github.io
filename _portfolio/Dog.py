@@ -1,6 +1,6 @@
 ---
 title: "Dog_Turtle1"
-excerpt: "Short description of portfolio item number 1<br/><img src='/images/Dog2026.png'>"
+excerpt: "A custom digital illustration combining the playful features of a dog, created to explore character design.<br/><img src='/images/Dog2026.png'>"
 collection: portfolio
 ---
 
