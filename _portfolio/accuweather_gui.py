@@ -1,14 +1,21 @@
+---
+title: "AccuWeather Pulse - Modern Weather Dashboard"
+excerpt: "Modern Weather Dashboard, created to explore character design.<br/><img src='/images/Dog2026.png'>"
+collection: portfolio
+---
+
+
 """
-AccuWeather Pulse - Modern Weather Dashboard (CustomTkinter)
-============================================================
-Upgraded AccuWeather GUI featuring:
-1. Dynamic Weather Icon System (AccuWeather Codes 1-44 -> local `icons/{code}.png` with Emoji fallback)
-2. Expanded Weather Data (Search bar, Refresh, Timestamp, °C/°F toggle, 6-metric Current Weather Grid,
-   12-Hour Horizontal Scrollable Forecast, and 5-Day Daily Forecast)
-3. Dynamic Day/Night Theme based on API's `IsDayTime` boolean
-4. `MOCK_MODE` support using local JSON files in `mock_data/` to preserve the 50 calls/day quota
-5. Robust error handling for invalid city names, network timeouts, and HTTP 401/429/503 quota limits
+AccuWeather Pulse | CustomTkinter Weather Dashboard
+---------------------------------------------------
+Key Features:
+- Dynamic Weather Icons: Local PNGs (`icons/{code}.png`) for codes 1–44 with emoji fallbacks.
+- Full Weather Suite: Search, refresh, timestamp, °C/°F unit toggle, 6-metric grid, 12-hr hourly scroll, and 5-day forecast.
+- Auto Day/Night UI: Theme adapts dynamically using the API's `IsDayTime` boolean.
+- `MOCK_MODE`: Uses local `mock_data/` JSON files to preserve the 50/day API call limit.
+- Resilient Error Handling: Catches invalid cities, timeouts, and HTTP 401/429/503 errors.
 """
+
 
 import os
 import sys
