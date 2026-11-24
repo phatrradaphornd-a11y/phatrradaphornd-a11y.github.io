@@ -1,7 +1,394 @@
 ---
-title: "Portfolio item number 2"
-excerpt: "Short description of portfolio item number 2 <br/><img src='/images/500x300.png'>"
+title: "Barista Cafe_game"
+excerpt: "Guide a tiny blue bird through a pastel meadow of blooming pipes. Cute looks, fierce reflexes!<br/><img src='/images/images/Barista Cafe_game.png'>"
 collection: portfolio
 ---
 
-This is an item in your portfolio. It can be have images or nice text. If you name the file .md, it will be parsed as markdown. If you name the file .html, it will be parsed as HTML. 
+import pygame
+import random
+import math
+import sys
+
+# เริ่มต้นการทำงานของ Pygame
+pygame.init()
+
+# ตั้งค่าหน้าจอ
+WIDTH, HEIGHT = 420, 620
+screen = pygame.display.set_mode((WIDTH, HEIGHT))
+pygame.display.set_caption("Cute Flappy Adventure!")
+clock = pygame.time.Clock()
+font = pygame.font.SysFont("Arial", 44, bold=True)
+title_font = pygame.font.SysFont("Comic Sans MS", 38, bold=True)
+
+# ---------------------------------------------------------
+# 1. ตัวแปรหลัก 6 ตัว (ตามโครงสร้างใน Scratch)
+# ---------------------------------------------------------
+gravity = 1.0          # แรงโน้มถ่วงดึงลงพื้น
+jump = 7.0             # แรงกระโดดเมื่อคลิก/กด space bar
+speed = 3              # ความเร็วในการเคลื่อนที่ของฉาก
+verticalSpeed = 0.0    # ความเร็วในแนวตั้งของตัวละคร
+digitPosition = 1      # ตำแหน่งหลักของตัวเลขคะแนน
+score = 0              # คะแนนในรอบนั้น ๆ
+
+# สถานะของเกม (จำลองระบบ Broadcast)
+game_state = "New game"
+
+# ---------------------------------------------------------
+# ฟังก์ชันวาดฉากหลังแนวพาสเทล (ภูเขา ก้อนเมฆ บ้าน และพระอาทิตย์)
+# ---------------------------------------------------------
+clouds = [[60, 110, 0.4], [240, 80, 0.3], [380, 140, 0.5]]
+
+def draw_pastel_background(surface):
+    # ไล่เฉดสีท้องฟ้าพาสเทล (ฟ้าอ่อน -> ชมพูพีช -> เหลืองนวล)
+    for y in range(HEIGHT):
+        ratio = y / HEIGHT
+        if ratio < 0.5:
+            r = int(175 + (250 - 175) * (ratio * 2))
+            g = int(228 + (218 - 228) * (ratio * 2))
+            b = int(248 + (225 - 248) * (ratio * 2))
+        else:
+            r = int(250 + (255 - 250) * ((ratio - 0.5) * 2))
+            g = int(218 + (243 - 218) * ((ratio - 0.5) * 2))
+            b = int(225 + (205 - 225) * ((ratio - 0.5) * 2))
+        pygame.draw.line(surface, (r, g, b), (0, y), (WIDTH, y))
+
+    # ดวงอาทิตย์ละมุน ๆ
+    pygame.draw.circle(surface, (255, 250, 220, 120), (310, 130), 48)
+    pygame.draw.circle(surface, (255, 245, 195), (310, 130), 36)
+
+    # ก้อนเมฆปุย ๆ เคลื่อนที่ช้า ๆ
+    for c in clouds:
+        c[0] -= c[2]
+        if c[0] < -80:
+            c[0] = WIDTH + 60
+        cx, cy = int(c[0]), int(c[1])
+        pygame.draw.circle(surface, (255, 248, 250), (cx, cy), 22)
+        pygame.draw.circle(surface, (255, 248, 250), (cx + 18, cy - 6), 26)
+        pygame.draw.circle(surface, (255, 248, 250), (cx + 38, cy), 20)
+        pygame.draw.circle(surface, (255, 248, 250), (cx + 18, cy + 6), 20)
+
+    # ทิวเขาไกล ๆ สีเขียวอมฟ้าพาสเทล
+    pygame.draw.polygon(surface, (162, 205, 185), [(0, 460), (90, 330), (210, 440), (330, 310), (420, 420), (420, 550), (0, 550)])
+    # เนินเขาใกล้เข้ามา สีเขียวอ่อน
+    pygame.draw.polygon(surface, (144, 198, 149), [(0, 480), (140, 390), (290, 470), (420, 380), (420, 550), (0, 550)])
+
+    # บ้านหลังน้อยน่ารักบนเนินเขา
+    pygame.draw.rect(surface, (255, 235, 205), (55, 425, 32, 26), border_radius=3)
+    pygame.draw.polygon(surface, (235, 130, 115), [(50, 425), (71, 408), (92, 425)])
+    pygame.draw.rect(surface, (180, 120, 90), (67, 437, 8, 14))
+
+    # ต้นสนเล็ก ๆ ฝั่งขวา
+    for tx in [350, 375, 398]:
+        pygame.draw.polygon(surface, (95, 158, 115), [(tx, 395), (tx - 12, 435), (tx + 12, 435)])
+        pygame.draw.polygon(surface, (80, 140, 100), [(tx, 415), (tx - 15, 455), (tx + 15, 455)])
+
+
+# ---------------------------------------------------------
+# 2. คลาสจำลอง Sprite ทั้ง 6 ตัว (อัปเกรดความน่ารัก)
+# ---------------------------------------------------------
+
+# 2.1 Sprite: flappy (ลูกนกสีฟ้าตัวกลม ตาโต แก้มชมพู มงกุฎดอกไม้)
+class Flappy:
+    def __init__(self):
+        self.reset()
+        self.wing_angle = 0
+        self.anim_tick = 0
+
+    def reset(self):
+        global verticalSpeed
+        self.x = 110
+        self.y = HEIGHT // 2
+        verticalSpeed = 0.0
+        self.angle = 0
+
+    def flap(self):
+        global verticalSpeed
+        verticalSpeed = -jump
+        self.wing_angle = 25
+
+    def update(self):
+        global verticalSpeed
+        self.anim_tick += 0.25
+        if game_state == "Start game":
+            self.y += verticalSpeed
+            verticalSpeed += gravity * 0.4
+            self.angle = max(-70, min(28, -verticalSpeed * 4))
+            self.wing_angle = math.sin(self.anim_tick * 2) * 18
+        else:
+            # ลอยขึ้นลงนุ่มนวลในหน้าแรก
+            self.y = (HEIGHT // 2 - 20) + math.sin(self.anim_tick * 0.6) * 8
+            self.wing_angle = math.sin(self.anim_tick * 1.5) * 15
+            self.angle = 0
+
+    def get_rect(self):
+        return pygame.Rect(self.x - 16, self.y - 15, 32, 30)
+
+    def draw_flower(self, surf, fx, fy, petal_color):
+        for a in range(0, 360, 72):
+            rad = math.radians(a)
+            px = fx + math.cos(rad) * 3.5
+            py = fy + math.sin(rad) * 3.5
+            pygame.draw.circle(surf, petal_color, (int(px), int(py)), 2)
+        pygame.draw.circle(surf, (255, 225, 90), (fx, fy), 2)
+
+    def draw(self, surface):
+        bird_surf = pygame.Surface((64, 56), pygame.SRCALPHA)
+        cx, cy = 32, 30
+
+        # หางเล็ก ๆ ด้านหลัง
+        pygame.draw.ellipse(bird_surf, (115, 195, 235), (8, cy - 4, 14, 8))
+        pygame.draw.ellipse(bird_surf, (95, 175, 220), (10, cy + 2, 12, 7))
+
+        # ลำตัวกลมปุ๊กสีฟ้าพาสเทล + ขอบเส้นนุ่ม ๆ
+        pygame.draw.circle(bird_surf, (75, 115, 145), (cx, cy), 19)
+        pygame.draw.circle(bird_surf, (148, 218, 252), (cx, cy), 17)
+        # พุงนุ่ม ๆ สีขาวอมฟ้า
+        pygame.draw.ellipse(bird_surf, (235, 250, 255), (cx - 10, cy + 2, 22, 14))
+
+        # ขนปุยบนหัว
+        pygame.draw.circle(bird_surf, (148, 218, 252), (cx - 2, cy - 17), 5)
+        pygame.draw.circle(bird_surf, (148, 218, 252), (cx + 4, cy - 16), 4)
+
+        # มงกุฎดอกไม้บนหัว
+        self.draw_flower(bird_surf, cx - 10, cy - 14, (255, 175, 195))
+        self.draw_flower(bird_surf, cx + 9, cy - 14, (255, 210, 140))
+
+        # ดวงตากลมโตเป็นประกาย
+        pygame.draw.circle(bird_surf, (45, 35, 55), (cx + 8, cy - 3), 5)
+        pygame.draw.circle(bird_surf, (255, 255, 255), (cx + 9, cy - 5), 2)
+        pygame.draw.circle(bird_surf, (255, 255, 255), (cx + 7, cy - 2), 1)
+
+        # แก้มชมพูระเรื่อ
+        pygame.draw.ellipse(bird_surf, (255, 155, 175), (cx + 1, cy + 3, 7, 4))
+
+        # จะงอยปากเล็ก ๆ สีส้ม
+        pygame.draw.polygon(bird_surf, (255, 165, 85), [(cx + 15, cy - 1), (cx + 23, cy + 2), (cx + 15, cy + 5)])
+
+        # ปีกกระพือได้
+        wing_y_offset = int(self.wing_angle * 0.25)
+        pygame.draw.ellipse(bird_surf, (75, 115, 145), (cx - 14, cy - 3 + wing_y_offset, 16, 11))
+        pygame.draw.ellipse(bird_surf, (175, 232, 255), (cx - 13, cy - 2 + wing_y_offset, 14, 9))
+
+        # ขาเล็ก ๆ
+        pygame.draw.circle(bird_surf, (255, 160, 90), (cx - 2, cy + 17), 3)
+        pygame.draw.circle(bird_surf, (255, 160, 90), (cx + 5, cy + 17), 3)
+
+        rotated_bird = pygame.transform.rotate(bird_surf, self.angle)
+        rect = rotated_bird.get_rect(center=(self.x, self.y))
+        surface.blit(rotated_bird, rect.topleft)
+
+
+# 2.3 Sprite: ground (พื้นหญ้าเขียวขจีพร้อมดอกไม้เล็ก ๆ)
+class Ground:
+    def __init__(self):
+        self.height = 85
+        self.y = HEIGHT - self.height
+        self.clones_x = [0, WIDTH]
+        # สุ่มตำแหน่งดอกไม้บนพื้นหญ้า
+        self.flowers = [(random.randint(15, WIDTH - 15), random.randint(22, 65),
+                         random.choice([(255, 180, 195), (255, 240, 150), (200, 190, 255), (255, 255, 255)]))
+                        for _ in range(14)]
+
+    def update(self):
+        for i in range(len(self.clones_x)):
+            self.clones_x[i] -= speed
+            if self.clones_x[i] <= -WIDTH:
+                self.clones_x[i] = WIDTH
+
+    def draw(self, surface):
+        for gx in self.clones_x:
+            # พื้นหญ้าสีเขียวพาสเทลสดใส
+            pygame.draw.rect(surface, (152, 212, 115), (gx, self.y, WIDTH, self.height))
+            # แถบหญ้าด้านบน
+            pygame.draw.rect(surface, (125, 192, 95), (gx, self.y, WIDTH, 14))
+            pygame.draw.line(surface, (85, 140, 70), (gx, self.y), (gx + WIDTH, self.y), 3)
+
+            # วาดดอกไม้จิ๋วประดับพื้นหญ้า
+            for fx, fy, fcol in self.flowers:
+                cx, cy = int(gx + fx), int(self.y + fy)
+                pygame.draw.circle(surface, fcol, (cx - 3, cy), 3)
+                pygame.draw.circle(surface, fcol, (cx + 3, cy), 3)
+                pygame.draw.circle(surface, fcol, (cx, cy - 3), 3)
+                pygame.draw.circle(surface, fcol, (cx, cy + 3), 3)
+                pygame.draw.circle(surface, (255, 220, 80), (cx, cy), 2)
+
+
+# 2.4 Sprite: pipe (ท่อสีเขียวละมุน พันด้วยเถาวัลย์และดอกไม้)
+class PipeClone:
+    def __init__(self, x):
+        self.x = x
+        self.width = 66
+        self.gap = 150
+        self.top_height = random.randint(85, HEIGHT - 85 - self.gap - 85)
+        self.passed = False
+        self.flower_color = random.choice([(255, 175, 195), (255, 220, 130), (195, 185, 255)])
+
+    def update(self):
+        global score
+        self.x -= speed
+        if not self.passed and self.x + self.width < 110:
+            score += 1
+            self.passed = True
+
+    def get_rects(self):
+        top_rect = pygame.Rect(self.x, 0, self.width, self.top_height)
+        bottom_rect = pygame.Rect(self.x, self.top_height + self.gap, self.width, HEIGHT - (self.top_height + self.gap) - 85)
+        return top_rect, bottom_rect
+
+    def draw_cute_pipe(self, surface, rect, is_top):
+        if rect.height <= 0:
+            return
+        # ตัวท่อหลัก
+        pygame.draw.rect(surface, (132, 202, 108), rect)
+        # แถบไฮไลท์แสงด้านซ้าย
+        pygame.draw.rect(surface, (172, 228, 145), (rect.x + 8, rect.y, 12, rect.height))
+        # แถบเงาด้านขวา
+        pygame.draw.rect(surface, (105, 172, 85), (rect.right - 14, rect.y, 14, rect.height))
+        pygame.draw.rect(surface, (75, 125, 65), rect, 3)
+
+        # ปากท่อ
+        rim_h = 26
+        rim_y = rect.bottom - rim_h if is_top else rect.top
+        rim_rect = pygame.Rect(rect.x - 5, rim_y, rect.width + 10, rim_h)
+        pygame.draw.rect(surface, (145, 215, 118), rim_rect, border_radius=6)
+        pygame.draw.rect(surface, (185, 238, 158), (rim_rect.x + 8, rim_rect.y + 3, 14, rim_h - 6), border_radius=3)
+        pygame.draw.rect(surface, (75, 125, 65), rim_rect, 3, border_radius=6)
+
+        # เถาวัลย์และดอกไม้ประดับปากท่อ
+        fx = rim_rect.right - 12 if is_top else rim_rect.left + 14
+        fy = rim_rect.centery
+        pygame.draw.arc(surface, (75, 145, 65), (rect.x, rect.y + 10, rect.width, max(30, rect.height - 20)), 0.5, 2.8, 3)
+        for a in range(0, 360, 72):
+            rad = math.radians(a)
+            pygame.draw.circle(surface, self.flower_color, (int(fx + math.cos(rad) * 5), int(fy + math.sin(rad) * 5)), 4)
+        pygame.draw.circle(surface, (255, 230, 100), (fx, fy), 3)
+
+    def draw(self, surface):
+        top_rect, bottom_rect = self.get_rects()
+        self.draw_cute_pipe(surface, top_rect, True)
+        self.draw_cute_pipe(surface, bottom_rect, False)
+
+
+# 2.2 Sprite: score (แสดงคะแนนตัวเลขขอบมน)
+def draw_score(surface):
+    global digitPosition
+    if game_state == "Start game":
+        score_str = str(score)
+        digitPosition = len(score_str)
+        score_text = font.render(score_str, True, (255, 255, 255))
+        shadow_text = font.render(score_str, True, (95, 125, 110))
+        rect = score_text.get_rect(center=(WIDTH // 2, 65))
+        surface.blit(shadow_text, (rect.x + 3, rect.y + 3))
+        surface.blit(score_text, rect)
+
+
+# 2.5 & 2.6 Sprite: start (ป้ายไม้/ปุ่มเริ่มเกม) และ title (ชื่อเกม)
+start_button_rect = pygame.Rect(WIDTH // 2 - 80, HEIGHT // 2 + 55, 160, 54)
+
+def draw_title_and_start(surface):
+    if game_state == "New game":
+        # 2.6 Sprite: title
+        t1 = title_font.render("CUTE FLAPPY", True, (255, 255, 255))
+        t1_s = title_font.render("CUTE FLAPPY", True, (95, 130, 120))
+        r1 = t1.get_rect(center=(WIDTH // 2, 140))
+        surface.blit(t1_s, (r1.x + 3, r1.y + 3))
+        surface.blit(t1, r1)
+
+        # 2.5 Sprite: start (ปุ่มสไตล์ป้ายไม้น่ารัก)
+        pygame.draw.rect(surface, (198, 142, 95), start_button_rect, border_radius=14)
+        pygame.draw.rect(surface, (222, 168, 118), (start_button_rect.x + 4, start_button_rect.y + 4, start_button_rect.width - 8, start_button_rect.height - 10), border_radius=10)
+        pygame.draw.rect(surface, (120, 80, 50), start_button_rect, 3, border_radius=14)
+        
+        btn_font = pygame.font.SysFont("Comic Sans MS", 24, bold=True)
+        btn_text = btn_font.render("START", True, (255, 250, 240))
+        surface.blit(btn_text, btn_text.get_rect(center=start_button_rect.center))
+
+
+# ---------------------------------------------------------
+# ฟังก์ชันควบคุมสถานะเกม (Broadcast)
+# ---------------------------------------------------------
+flappy = Flappy()
+ground = Ground()
+pipes = []
+pipe_spawn_timer = 0
+
+def broadcast_new_game():
+    global game_state, score, digitPosition, pipes
+    game_state = "New game"
+    score = 0
+    digitPosition = 1
+    pipes.clear()
+    flappy.reset()
+
+def broadcast_start_game():
+    global game_state, verticalSpeed, pipe_spawn_timer
+    game_state = "Start game"
+    verticalSpeed = 0.0
+    pipe_spawn_timer = 0
+    flappy.flap()
+
+# ---------------------------------------------------------
+# Main Game Loop
+# ---------------------------------------------------------
+broadcast_new_game()
+
+while True:
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            pygame.quit()
+            sys.exit()
+
+        if event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE:
+            if game_state == "New game":
+                broadcast_start_game()
+            elif game_state == "Start game":
+                flappy.flap()
+
+        if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+            if game_state == "New game":
+                if start_button_rect.collidepoint(event.pos):
+                    broadcast_start_game()
+            elif game_state == "Start game":
+                flappy.flap()
+
+    ground.update()
+    flappy.update()
+
+    if game_state == "Start game":
+        pipe_spawn_timer += 1
+        if pipe_spawn_timer >= 95:
+            pipes.append(PipeClone(WIDTH + 20))
+            pipe_spawn_timer = 0
+
+        for p in pipes[:]:
+            p.update()
+            if p.x < -p.width - 10:
+                pipes.remove(p)
+
+        flappy_rect = flappy.get_rect()
+        hit = False
+
+        if flappy.y + 15 >= HEIGHT - ground.height or flappy.y - 15 <= 0:
+            hit = True
+
+        for p in pipes:
+            top_r, bottom_r = p.get_rects()
+            if flappy_rect.colliderect(top_r) or flappy_rect.colliderect(bottom_r):
+                hit = True
+
+        if hit:
+            pygame.time.delay(500)
+            broadcast_new_game()
+
+    # วาดภาพทั้งหมด
+    draw_pastel_background(screen)
+    for p in pipes:
+        p.draw(screen)
+    ground.draw(screen)
+    flappy.draw(screen)
+    draw_score(screen)
+    draw_title_and_start(screen)
+
+    pygame.display.flip()
+    clock.tick(60)
+          
