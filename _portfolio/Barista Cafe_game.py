@@ -1,3 +1,9 @@
+---
+title: "Barista Cafe game"
+excerpt: "Step into a cozy fantasy-themed coffee shop where every adventurer needs their daily brew.<br/><img src='/images/Screenshot 2026-11-25 002026.png'>"
+collection: portfolio
+---
+
 import pygame
 import random
 import math
