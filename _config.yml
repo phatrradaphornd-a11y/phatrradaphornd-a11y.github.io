@@ -23,11 +23,11 @@ repository               : "academicpages/phatrradaphornd-a11y.github.io"
 #               Additional customization can be done by editing /_includes/author-profile.html
 author:
   # Biographic information
-  avatar           : "images/phatrradaphorn.png"
+  avatar           : "images/phatrradaphhorn.jpg"
   name             : "Phatrradaphorn Depo"
   pronouns         : # example: "She"  
   bio              : "I am a fourth-year Geoscience student who is always eager to learn, explore new things, and gain new experiences."
-  location         : "Earths"
+  location         : "Thailand"
   employer         : "Mahidol University"
   uri              : # URL
   email            : "Phatrradaphorn.d@gmail.com" 
@@ -58,7 +58,7 @@ author:
   # Social media
   artstation       : # Username
   bluesky          : "bsky.app" # Replace this with you Bluesky username
-  facebook         : "Phatrradaphorn Depo"
+  facebook         : 
   flickr           : # Username
   foursquare       : # Username
   goodreads        : # Username
