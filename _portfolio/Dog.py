@@ -2,6 +2,7 @@
 title: "Dog_Turtle1"
 excerpt: "A custom digital illustration combining the playful features of a dog, created to explore character design.<br/><img src='/images/Dog2026.png'>"
 collection: portfolio
+order: 2
 ---
 
 import turtle as t
