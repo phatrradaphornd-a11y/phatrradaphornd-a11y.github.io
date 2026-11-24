@@ -2,6 +2,7 @@
 title: "AccuWeather Pulse - Modern Weather Dashboard"
 excerpt: "Modern Weather Dashboard, created to explore character design.<br/><img src='/images/Screenshot 2026-11-25 031648.png'>"
 collection: portfolio
+order: 6
 ---
 
 
